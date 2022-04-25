@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017,2021 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -15,6 +15,9 @@
 #define _F_QDSS_H
 
 #include <linux/kernel.h>
+#ifdef CONFIG_IPC_LOGGING
+#include <linux/ipc_logging.h>
+#endif
 #include <linux/usb/ch9.h>
 #include <linux/usb/gadget.h>
 #include <linux/usb/composite.h>
@@ -71,6 +74,24 @@ struct f_qdss {
 	unsigned int ctrl_out_enabled:1;
 	struct workqueue_struct *wq;
 };
+
+#ifdef CONFIG_IPC_LOGGING
+static void *_qdss_ipc_log;
+
+#define NUM_PAGES	10 /* # of pages for ipc logging */
+#endif
+
+#if defined (CONFIG_DYNAMIC_DEBUG) && (CONFIG_IPC_LOGGING)
+#define qdss_log(fmt, ...) do { \
+	ipc_log_string(_qdss_ipc_log, "%s: " fmt,  __func__, ##__VA_ARGS__); \
+	dynamic_pr_debug("%s: " fmt, __func__, ##__VA_ARGS__); \
+} while (0)
+#elif defined (CONFIG_IPC_LOGGING)
+#define qdss_log(fmt, ...) \
+	ipc_log_string(_qdss_ipc_log, "%s: " fmt,  __func__, ##__VA_ARGS__)
+#else
+#define qdss_log(fmt, ...)
+#endif
 
 struct usb_qdss_opts {
 	struct usb_function_instance func_inst;
